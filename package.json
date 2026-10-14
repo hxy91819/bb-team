@@ -1,0 +1,76 @@
+{
+  "name": "bb-plugin-team",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hxy91819/bb-team.git"
+  },
+  "scripts": {
+    "test": "vitest run --config tests/vitest.config.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "build": "node scripts/build.mjs",
+    "check": "npm run test && npm run lint && npm run format:check && npm run typecheck && npm run build",
+    "format": "prettier --write server.ts app.tsx src/*.ts tests/*.ts scripts/*.mjs",
+    "format:check": "prettier --check server.ts app.tsx src/avatars.ts src/contracts.ts src/members.ts src/cli.ts src/client.ts src/identity.ts tests/*.ts scripts/*.mjs",
+    "audit": "node scripts/audit.mjs",
+    "audit:all": "node scripts/audit.mjs --all"
+  },
+  "exports": {
+    "./client": "./src/client.ts",
+    "./contracts": "./src/contracts.ts"
+  },
+  "engines": {
+    "node": ">=24",
+    "bb": ">=0.46",
+    "bbPluginSdk": ">=0.6.37"
+  },
+  "bb": {
+    "name": "Team",
+    "description": "Trusted team members, identity selection and profiles",
+    "branding": {
+      "icon": "Users"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "./skills/team-members"
+    ]
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.3.0",
+    "zod": "^4.6.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.37",
+    "@playwright/test": "1.58.2",
+    "@testing-library/react": "16.3.2",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "bb-app": "0.46.0",
+    "better-sqlite3": "^12.0.0",
+    "cron-parser": "^5.5.0",
+    "eslint": "9.39.1",
+    "hono": "^4.11.9",
+    "jsdom": "29.0.1",
+    "prettier": "3.8.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "8.71.2",
+    "vitest": "4.1.11",
+    "tsx": "4.20.6"
+  },
+  "description": "Trusted self-selected team member profiles for BB; thread integration pending.",
+  "overrides": {
+    "npm": "12.2.0"
+  }
+}
