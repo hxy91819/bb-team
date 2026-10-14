@@ -15,6 +15,7 @@ import {
 } from "@get-bb/plugin-sdk/app";
 import type { rpcContract, Member, Avatar } from "./src/contracts.js";
 import { createIdentityStore } from "./src/identity.js";
+import { ownerLabel, useOwnership } from "./src/thread-list.js";
 import { PersistentResponsiveDrawerShell } from "./components/ui/responsive-overlay.js";
 import { useIsCompactViewport } from "./components/ui/hooks/use-compact-viewport.js";
 import { Button } from "./components/ui/button";
@@ -25,8 +26,12 @@ type TeamState = {
   serverScope: string;
   timezone: string;
   timezoneConfigured: boolean;
+  threadIntegration: boolean;
 };
 const identities = new Map<string, ReturnType<typeof createIdentityStore>>();
+let activeIdentity: ReturnType<typeof createIdentityStore> | null = null;
+let identitySignal: AbortSignal | null = null;
+let identityFailure = "Team identity is loading. Wait and submit again.";
 function identityFor(scope: string) {
   let identity = identities.get(scope);
   if (!identity) {
@@ -37,6 +42,7 @@ function identityFor(scope: string) {
     );
     identities.set(scope, identity);
   }
+  activeIdentity = identity;
   return identity;
 }
 function browserTimezone() {
@@ -474,9 +480,15 @@ function TeamPage() {
       <div className="mx-auto max-w-3xl space-y-4 p-4 md:p-5">
         <p className="text-sm text-muted-foreground">
           Choose a trusted team identity. This is not login or proof of who
-          performed an action. Thread attribution, grouping and activity are not
-          connected yet.
+          performed an action. New threads capture this window's identity at
+          submission. Existing threads keep their attribution.
         </p>
+        {team.state && !team.state.threadIntegration && (
+          <p role="alert">
+            Thread attribution, grouping and activity require the compatible BB
+            fork; stock BB 0.46.0 is not supported.
+          </p>
+        )}
         {team.error && (
           <p role="alert" className="text-sm text-destructive">
             {team.error}
@@ -598,6 +610,109 @@ function Footer() {
   );
 }
 export default definePluginApp((app) => {
+  const hasThreadCreation =
+    typeof app.experimental_threadCreationContext?.register === "function";
+  const hasGrouping =
+    typeof app.slots.experimental_threadListGrouping === "function";
+  const hasRowDecoration =
+    typeof app.slots.experimental_threadRowDecoration === "function";
+  const hasThreadIntegration =
+    hasThreadCreation && hasGrouping && hasRowDecoration;
+  if (hasThreadIntegration) {
+    app.experimental_threadCreationContext.register({
+      capture: () => {
+        if (!activeIdentity || !identitySignal || identitySignal.aborted)
+          throw Error(identityFailure);
+        return { memberId: activeIdentity.getSnapshot().memberId };
+      },
+    });
+    app.contentScripts.register({
+      id: "window-identity",
+      mount: async ({ pluginId, signal }) => {
+        activeIdentity = null;
+        identitySignal = signal;
+        identityFailure = "Team identity is loading. Wait and submit again.";
+        try {
+          const response = await fetch(
+            `/api/v1/plugins/${encodeURIComponent(pluginId)}/rpc/state`,
+            {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: "null",
+              signal,
+            },
+          );
+          const result: unknown = await response.json();
+          if (
+            !response.ok ||
+            typeof result !== "object" ||
+            result === null ||
+            !("ok" in result) ||
+            result.ok !== true ||
+            !("result" in result) ||
+            typeof result.result !== "object" ||
+            result.result === null ||
+            !("serverScope" in result.result) ||
+            typeof result.result.serverScope !== "string"
+          )
+            throw Error(
+              "Cannot load Team identity. Reconnect or reload before creating an attributed thread.",
+            );
+          if (!signal.aborted)
+            identityFor(
+              JSON.stringify([location.origin, result.result.serverScope]),
+            );
+        } catch (cause) {
+          if (!signal.aborted)
+            identityFailure =
+              cause instanceof Error ? cause.message : String(cause);
+        }
+        return () => {
+          if (identitySignal === signal) {
+            activeIdentity = null;
+            identitySignal = null;
+          }
+        };
+      },
+    });
+  }
+  if (hasThreadIntegration) {
+    app.slots.experimental_threadListGrouping({
+      id: "members",
+      title: "Team members",
+      useData: useOwnership,
+      projection: ({ thread, data }) =>
+        data.status !== "ready"
+          ? { status: data.status }
+          : { status: "ready", group: ownerLabel(thread.id, data) },
+    });
+  }
+  if (hasThreadIntegration) {
+    app.slots.experimental_threadRowDecoration({
+      id: "member",
+      title: "Team member",
+      useData: useOwnership,
+      item: ({ thread, data }) => {
+        if (data.status !== "ready")
+          return {
+            text:
+              data.status === "loading"
+                ? "Loading member…"
+                : "Member unavailable",
+            accessibleLabel:
+              data.status === "loading"
+                ? "Thread member is loading"
+                : "Thread member lookup failed",
+          };
+        const owner = ownerLabel(thread.id, data);
+        return {
+          text: owner.label,
+          accessibleLabel: `Thread member: ${owner.label}`,
+          avatar: owner.avatar,
+        };
+      },
+    });
+  }
   app.slots.navPanel({
     id: "members",
     title: "Team",

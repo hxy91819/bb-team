@@ -13,7 +13,23 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Require verified fork supply (formal URLs pending joint acceptance)
+        env:
+          RUNTIME_URL: ${{ vars.BB_TEAM_RUNTIME_URL }}
+          SDK_URL: ${{ vars.BB_TEAM_SDK_URL }}
+        run: |
+          test -n "$RUNTIME_URL" && test -n "$SDK_URL" || { echo 'Matching BB fork and SDK asset URLs must be configured; stock SDK is unsupported.'; exit 1; }
+          curl --fail --location "$RUNTIME_URL" -o "$RUNNER_TEMP/bb.tar.gz"
+          curl --fail --location "$SDK_URL" -o "$RUNNER_TEMP/sdk.tgz"
+          echo "7793b4d5d8e8fa26467d60730c6b9d3002ef55f123c407501a60aa9299938124  $RUNNER_TEMP/bb.tar.gz" | sha256sum --check
+          echo "aa3c1cdca3c0219eda176b7216a72a9d8d978a532830c114aade64ad0b9bf412  $RUNNER_TEMP/sdk.tgz" | sha256sum --check
+          mkdir "$RUNNER_TEMP/bb-runtime"
+          tar -xzf "$RUNNER_TEMP/bb.tar.gz" -C "$RUNNER_TEMP/bb-runtime" --strip-components=1
+          echo "BB_TEAM_RUNTIME_DIR=$RUNNER_TEMP/bb-runtime" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/bb-runtime/bin" >> "$GITHUB_PATH"
       - run: npm ci --no-fund
+      - name: Overlay matching candidate SDK without changing manifest or lock
+        run: npm install --no-save --package-lock=false --ignore-scripts "$RUNNER_TEMP/sdk.tgz"
       - run: npm run check
       - run: npm run audit
       - name: Report upstream development toolchain advisories

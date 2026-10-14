@@ -3,17 +3,15 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
+import { node, cli, env, provenance } from "./runtime.mjs";
 const root = fileURLToPath(new URL("../", import.meta.url)),
   dir = await mkdtemp(join(tmpdir(), "bb-team-install-"));
 async function run(command, args, cwd) {
   const child = spawn(command, args, {
     cwd,
     stdio: "inherit",
-    env: {
-      ...process.env,
-      BB_CLI: resolve(root, "node_modules/bb-app/host-daemon/dist/bb"),
-    },
+    env,
   });
   const [code] = await once(child, "exit");
   if (code !== 0) throw Error(`${command} failed: ${code}`);
@@ -35,13 +33,9 @@ try {
     dir,
   );
 
-  await run(
-    process.execPath,
-    [resolve(root, "node_modules/bb-app/dist/bb.js"), "plugin", "build", dir],
-    dir,
-  );
+  await run(node, [cli, "plugin", "build", dir], dir);
   console.log(
-    "PASS: clean committed Git checkout without generated files, production-only installation with scripts disabled, public plugin build",
+    `PASS: clean committed Git checkout without generated files, production-only installation with scripts disabled, BB fork ${provenance.source} plugin build`,
   );
 } finally {
   await rm(dir, { recursive: true, force: true });

@@ -1,10 +1,12 @@
 # bb-team
 
-Independent BB plugin for trusted, self-selected team members. This baseline
-implements member profiles, identity selection and a shared RPC/SDK/CLI service.
-Thread creation attribution, member grouping, row labels and activity queries
-are **next phase**, pending BB's public extensions. There is no npm release or
-version tag yet.
+Independent BB plugin for trusted, self-selected team members, native thread
+attribution, member grouping/row labels and on-demand retained activity.
+This is a **local candidate**, requiring BB fork source
+`e7c2ef8409d575c463cba97f366a936e724bfd98` and its matching SDK artifact.
+Stock BB 0.46.0 / SDK 0.6.37 do not supply these extensions. Formal SDK asset
+URLs and release installation remain pending joint acceptance; this candidate
+has not been published.
 
 ## Implemented behavior
 
@@ -50,24 +52,47 @@ version tag yet.
 - Navigation, plugin settings and sidebar footer expose the member UI. Compact
   profile editors use BB's vendored persistent drawer and keep app-root
   controls available. Committed profile changes publish `members.changed`;
-  reconnect refetches current state and profiles. No names or avatars are
-  copied into thread metadata in this phase.
+  reconnect refetches current state and profiles. Only fixed member IDs are
+  copied into thread metadata; names and avatars come from current profiles.
+- Native creation, fork and handoff synchronously capture the window's current
+  identity. Backend preparation validates it before creation. An explicit null
+  remains unassigned; a nonexistent explicit identity fails visibly and keeps
+  the draft. Agent child creation may inherit its parent's member, but a fork's
+  source does not implicitly supply an identity. Starting/retrying an existing
+  thread never reassigns it. Old threads remain unassigned.
+- Select **Threads → Organize → Team members** in the native sidebar. Group IDs
+  use member UUIDs; row labels show each child's actual attribution without
+  moving children out of the native tree. Loading/error states are distinct
+  from unassigned. Metadata and profiles are fetched in bounded batches.
+- `bb team activity` queries the host's retained evidence only when requested.
+  It includes archived threads and today's continuation of older threads,
+  excludes inherited fork history where boundaries are known, and reports
+  `forkBoundaryGaps` when they are not. It describes currently attributed BB
+  progress, not who performed each message or proof that a goal succeeded.
 
 ## Development and installation
 
-Requires Node 24, the exact public Plugin SDK 0.6.37 and the public `bb-app`
-0.46.0 development CLI pinned in the lockfile. These requirements cover only
-the interfaces used in this member baseline; they do not claim that BB 0.46.0
-has the next-phase creation/list/activity extensions.
+Requires matching Node 24, candidate runtime and candidate SDK. The lockfile's
+stock SDK entry is provisional, not a compatibility claim: after `npm ci`,
+overlay the verified candidate tgz with `--no-save --package-lock=false`.
+Never commit a local `file:` dependency. The formal release step must replace
+this provisional SDK entry with the published artifact URL and integrity.
 
 ```bash
 git clone https://github.com/hxy91819/bb-team.git
 cd bb-team
 npm ci
+export BB_TEAM_RUNTIME_DIR=/absolute/path/to/extracted/candidate-runtime
+# Verify the supplied SDK checksum, then overlay using task-owned empty npm
+# userconfig/globalconfig and an environment without npm_config_allow_scripts
+# (including uppercase variants). Do not modify actual user/global npm config.
+npm install --no-save --package-lock=false --ignore-scripts "$CANDIDATE_SDK_TGZ"
 npm run check
 ```
 
-`build` invokes the installed public `bb plugin build`. Asset loading needs no
+`build` invokes the selected candidate runtime's public `bb plugin build`,
+checks source provenance and isolates child npm configuration. It never falls
+back to stock or the main service's `BB_CLI`. Asset loading needs no
 npm lifecycle hook: BB managed Git installation disables scripts and omits dev
 and optional dependencies. `src/avatars.ts` and `dist/server.js` both sit one
 level below the committed `assets/` directory, so runtime URLs work in source
@@ -80,14 +105,21 @@ private to prevent accidental npm publication.
 For an explicitly chosen **development** BB instance:
 
 ```bash
-BB_SERVER_URL=http://127.0.0.1:YOUR_DEV_PORT npx bb plugin install . --yes
-BB_SERVER_URL=http://127.0.0.1:YOUR_DEV_PORT npx bb plugin dev .
+BB_CLI="$BB_TEAM_RUNTIME_DIR/bin/bb" BB_SERVER_URL=http://127.0.0.1:YOUR_DEV_PORT "$BB_TEAM_RUNTIME_DIR/bin/bb" plugin install . --yes
 ```
 
 Do not interpret these examples as automatic installation into your normal BB
-instance. `scripts/live-smoke.mjs` starts the pinned public server with a fresh
+instance. `scripts/live-smoke.mjs` starts the selected candidate server with a fresh
 temporary data directory, installs this package, exercises real browser and
 wire flows, then stops the server and deletes only its own temporary data.
+It installs a temporary copy so changed-bundle reload verification cannot
+modify the checkout. Set `BB_TEAM_EVIDENCE_DIR` to retain screenshots.
+Extended native creation/fork/handoff and activity journeys additionally need
+`BB_TEAM_TEST_PROVIDER_DIR`: a disposable public-SDK provider plugin registering
+`team-echo` / `fake-model`, with checkpoint forks and deterministic echo turns.
+The acceptance evidence retains the fixture used for that run. Without this
+input, the script runs member/UI/lifecycle checks and skips provider journeys;
+it does not claim a complete thread integration run.
 
 ```bash
 node scripts/live-smoke.mjs
@@ -97,8 +129,8 @@ On a shared BB development host, run each entire heavy job under the shared
 resource lock and the host-provided resource isolation runner:
 
 ```bash
-flock /tmp/bb-team-verification.lock "$BB_RESOURCE_RUNNER" -- npm run check
-flock /tmp/bb-team-verification.lock "$BB_RESOURCE_RUNNER" -- node scripts/live-smoke.mjs
+flock /tmp/bb-team-verification.lock "$BB_RESOURCE_RUNNER" --profile package -- npm run check
+flock /tmp/bb-team-verification.lock "$BB_RESOURCE_RUNNER" --profile package -- node scripts/live-smoke.mjs
 ```
 
 Set `BB_RESOURCE_RUNNER` to that host's `scripts/run-resource-isolated` executable.
@@ -120,6 +152,9 @@ bb team update-self --member MEMBER_ID --name "New name" --avatar owl --json
 bb team identity --member MEMBER_ID --json
 bb team avatars --json
 bb team timezone --timezone Asia/Shanghai --json
+bb team activity --name "Name" --date today --json
+bb team activity details --member MEMBER_ID --thread THREAD_ID --date today --json
+bb team activity --member MEMBER_ID --from-date 2026-10-01 --to-date 2026-10-15 --limit 20 --max-chars 8000 --json
 ```
 
 `src/contracts.ts` exports the typed `rpcContract`. Browser callers use
@@ -142,7 +177,13 @@ await team.updateSelf(memberId, 'New name', 'panda');
 
 RPC methods are discoverable through BB's public plugin RPC discovery. No
 extra member list, image bytes or tool collection is injected into agent
-context. There is no activity command in this phase.
+context. The short `team-activity` skill is loaded on demand. Activity also has
+typed `team.activity(input)` and RPC `activity` entry points. Duplicate names
+require explicit resolution. Date ranges use team timezone and exclusive end
+dates; cursors freeze dates/timezone and must retain mode and filters. Follow
+`nextCursor` as needed and report `hasMore`, `truncated`, live counts and retained
+coverage. The character budget applies to complete serialized JSON, never a
+partial JSON fragment; continuation starts after the last emitted item.
 
 ## Data and maintenance
 
@@ -156,7 +197,8 @@ plugin never removes team data as a shutdown side effect.
 describes the trusted boundary. Vendored UI retains BB's actual MIT license in
 [licenses/](licenses/README.md); plugin code is copyright hxy91819.
 
-CI performs locked dependency installation, behavior tests, lint, formatting,
+CI needs the verified runtime and matching SDK supply configured before this
+candidate can be released. Once supplied, it performs dependency installation, behavior tests, lint, formatting,
 typecheck, plugin build, production dependency audit and secret scanning. The full development audit
 also runs and currently reports known advisories bundled inside npm, which
 upstream npm cannot auto-fix; this advisory step is visible and non-blocking. Verification

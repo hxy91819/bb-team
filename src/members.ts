@@ -171,6 +171,16 @@ export function createMemberService(
     list,
     resolve,
     get,
+    batch: (ids: string[]) => {
+      const values = z.array(memberId).max(200).parse(ids);
+      if (!values.length) return [];
+      return db
+        .prepare(
+          `SELECT ${columns} FROM members WHERE member_id IN (${values.map(() => "?").join(",")})`,
+        )
+        .all(...values)
+        .map((row) => memberSchema.parse(row));
+    },
     create,
     updateSelf,
     validate: (id: string | null) => {

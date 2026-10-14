@@ -1,5 +1,5 @@
 import type { PluginRpcClient } from "@get-bb/plugin-sdk";
-import type { TeamContract } from "./contracts.js";
+import type { ActivityInput, TeamContract } from "./contracts.js";
 export type TeamClient = PluginRpcClient<TeamContract>;
 /** Accept useRpc<TeamContract>() or a caller-supplied typed RPC transport. */
 export function createTeamClient(rpc: TeamClient) {
@@ -11,6 +11,7 @@ export function createTeamClient(rpc: TeamClient) {
     resolve: (name: string, limit = 10, cursor: string | null = null) =>
       rpc.call("members_resolve", { name, limit, cursor }),
     get: (memberId: string) => rpc.call("members_get", { memberId }),
+    activity: (input: ActivityInput) => rpc.call("activity", input),
     create: (actorMemberId: string, displayName: string, avatarId = "cat") =>
       rpc.call("members_create", { actorMemberId, displayName, avatarId }),
     updateSelf: (memberId: string, displayName: string, avatarId = "cat") =>
@@ -58,6 +59,13 @@ export function createTeamSdkClient(
         method: "members_get",
         input: { memberId },
         outputSchema: rpcContract.members_get.output,
+      }),
+    activity: (input: ActivityInput) =>
+      sdk.plugins.callRpc({
+        pluginId,
+        method: "activity",
+        input,
+        outputSchema: rpcContract.activity.output,
       }),
     create: (actorMemberId: string, displayName: string, avatarId = "cat") =>
       sdk.plugins.callRpc({

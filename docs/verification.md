@@ -1,4 +1,93 @@
-# Member baseline verification
+# Verification record
+
+## Thread integration candidate — 2026-10-14
+
+This phase integrates native thread attribution, grouping and retained
+activity. The candidate is not a public release.
+
+- BB/SDK source: `e7c2ef8409d575c463cba97f366a936e724bfd98`.
+- Runtime: `bb-fork-v0.46.0-candidate-e7c2ef8409-linux-x64.tar.gz`, Node
+  `v24.15.0`, SHA256
+  `7793b4d5d8e8fa26467d60730c6b9d3002ef55f123c407501a60aa9299938124`.
+- SDK: `bb-plugin-sdk-fork-v0.46.0-candidate-e7c2ef8409.tgz`, SHA256
+  `aa3c1cdca3c0219eda176b7216a72a9d8d978a532830c114aade64ad0b9bf412`.
+  Its package version remains 0.6.37; stock 0.6.37 is not equivalent.
+  Development uses a no-save overlay. Formal URL/integrity pinning and public
+  installation/CI are pending the matching BB Release.
+
+Executed checks use the shared `flock` and resource-isolated package profile,
+with task-owned npm configuration and the candidate runtime, not the primary
+BB service:
+
+- 14 tests passed, including real SQLite, the public SDK plugin harness,
+  activity RPC/CLI budgets, Unicode serialization, duplicate-name ambiguity,
+  23/25-hour DST days, frozen query cursors across plugin reload, and
+  parent-versus-fork-source attribution. Lint, formatting, typecheck and
+  candidate backend/frontend builds passed. Production audit: zero findings.
+- Cold production-only installation and build passed. Two real installation
+  failures were repaired: `cron-parser` belongs in runtime dependencies; the
+  shared UUID schema must not pull the backend RPC registration module into
+  the frontend. Red and green build logs are retained with the acceptance
+  evidence.
+- Fresh isolated server/daemon and two Chromium windows exercised persisted
+  identities and refresh, profile updates, native creation, manual fork,
+  handoff, explicit null, and invalid identity with the draft retained.
+  The provider is a deterministic public-protocol fixture. Its real turn
+  execution proves integration, not paid AI quality or an independent claim
+  that work succeeded. No activity events were inserted directly into the DB.
+- Native member grouping and row labels updated from current profiles without
+  changing metadata. Delayed and failed metadata requests showed loading and
+  failure separately from unassigned, then recovered. Multilevel forks exposed
+  local suffix evidence and excluded inherited prefixes; archived activity
+  remained queryable.
+- Guide navigation opened the metadata card, copied its rich mention and
+  pasted it into a normal provider turn. The resolved context included the
+  activity and creation-context APIs. Plain clipboard text contains a mention,
+  not the expanded API reference.
+- Disabling the plugin stopped native creation attribution; enabling retained
+  member data. A changed app bundle in a temporary plugin copy was rebuilt and
+  reloaded, and its changed sidebar contribution appeared. This does not claim
+  that a same-hash server reload recreates the frontend.
+- Chromium and WebKit at 390×844 both passed profile drawer open/close,
+  member grouping menu selection and native Search input after closing those
+  surfaces. This is browser-engine coverage, not physical iOS/Android testing.
+  The complete final live run exited successfully and its isolated resource
+  scope was inactive after all owned server/daemon/browser processes exited.
+- Full-diff review `thr_mx4dj9dhwm` found the production dependency P1;
+  incremental review `thr_wy7myj5um6` found the incorrect Guide clipboard
+  assertion. Both were verified and fixed. Final incremental review
+  `thr_7gwr3pnmp3` reported no P0/P1. Failed attempts remain evidence, not passes.
+  Staged source secret scanning found no leaks; the approved commit identity
+  and history passed the identity check.
+
+The full development audit still reports five advisories (three high, two
+moderate) inside the bundled npm toolchain. Production audit is clean; the
+entire development graph is not. No production BB instance was modified.
+
+The candidate core's supplied SQLite/public API tests own event-time selection
+for older threads, SQL count/pagination above 10,000 rows, sequence ceilings,
+fork boundary gaps and cursor continuation after DB reopen. These are fixture
+contract tests, not a claim of yesterday's real user activity in this fresh
+instance. Two known core queue-edit baseline failures remain outside this
+plugin's scope. The older verify-bb inventory probe reports an unmapped
+`browser` CLI family; no inventory baseline was rewritten to hide that drift.
+
+Context cost: the skill description is 121 characters / 19 words; the full
+on-demand skill is 1,311 characters / 191 words (roughly 330 tokens at four
+characters per token). The discoverable RPC overview is 109 characters /
+14 words (roughly 28 tokens). Host catalog formatting and path lengths add
+overhead. Ordinary queries add no member roster, activity history, dedicated
+tool or dynamic instructions. These are text estimates, not provider usage
+measurements across all supported models.
+
+Implementation decisions: metadata contains only a fixed member UUID; each
+list demand uses deduplicated batches of at most 200 IDs; activity cursors
+carry frozen dates/timezone and the last emitted core cursor; oversized first
+items may shorten excerpts, while an envelope that still cannot fit fails
+explicitly instead of returning partial JSON. The plugin stores no activity
+log copy or whole-query snapshot.
+
+## Historical member baseline
 
 This file records executed checks, not a promise of complete team integration.
 

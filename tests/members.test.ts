@@ -321,7 +321,7 @@ test("public package stays inside declared public SDK boundary", async () => {
     fileURLToPath(new URL("../", import.meta.url)),
     {
       allow: [
-        /^(vitest(\/config)?|tsx\/esm\/api|typescript-eslint|better-sqlite3|react|react-dom|@playwright\/test|bb-app|@testing-library\/react|class-variance-authority|clsx|tailwind-merge)$/,
+        /^(vitest(\/config)?|tsx\/esm\/api|typescript-eslint|better-sqlite3|react|react-dom|@playwright\/test|bb-app|@testing-library\/react|class-variance-authority|clsx|tailwind-merge|cron-parser)$/,
         /^@radix-ui\//,
       ],
     },
