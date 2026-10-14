@@ -70,6 +70,14 @@ has not been published.
   `forkBoundaryGaps` when they are not. It describes currently attributed BB
   progress, not who performed each message or proof that a goal succeeded.
 
+## Distribution
+
+See [installation and release artifacts](docs/distribution.md) for the complete
+archive and fixed-tag Git installation contracts. Formal BB supply is being
+prepared for `fork-v0.46.0-20261014.1` at the same source SHA; the committed
+[supply record](release/bb-supply.json) explicitly records its verification
+status. Expected URLs are not yet verified downloads.
+
 ## Development and installation
 
 Requires matching Node 24, candidate runtime and candidate SDK. The lockfile's
@@ -81,8 +89,9 @@ this provisional SDK entry with the published artifact URL and integrity.
 ```bash
 git clone https://github.com/hxy91819/bb-team.git
 cd bb-team
-npm ci
 export BB_TEAM_RUNTIME_DIR=/absolute/path/to/extracted/candidate-runtime
+export PATH="$BB_TEAM_RUNTIME_DIR/bin:$PATH"
+npm ci
 # Verify the supplied SDK checksum, then overlay using task-owned empty npm
 # userconfig/globalconfig and an environment without npm_config_allow_scripts
 # (including uppercase variants). Do not modify actual user/global npm config.

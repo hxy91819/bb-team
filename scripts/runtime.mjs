@@ -17,10 +17,11 @@ export const runtime = resolve(directory);
 export const provenance = JSON.parse(
   readFileSync(join(runtime, "release.json"), "utf8"),
 );
-if (provenance.source !== "e7c2ef8409d575c463cba97f366a936e724bfd98")
-  throw Error(
-    "Team candidate verification requires BB source e7c2ef8409d575c463cba97f366a936e724bfd98.",
-  );
+const supply = JSON.parse(
+  readFileSync(new URL("../release/bb-supply.json", import.meta.url), "utf8"),
+);
+if (provenance.source !== supply.source)
+  throw Error(`Team requires BB source ${supply.source} (${supply.tag}).`);
 export const node = join(runtime, "bin/node");
 export const cli = join(runtime, "node_modules/bb-app/dist/bb.js");
 export const server = join(runtime, "node_modules/bb-app/dist/bb-server.js");

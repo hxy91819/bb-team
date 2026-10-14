@@ -17,7 +17,8 @@
     "format": "prettier --write server.ts app.tsx src/*.ts tests/*.ts scripts/*.mjs",
     "format:check": "prettier --check server.ts app.tsx src/*.ts tests/*.ts scripts/*.mjs",
     "audit": "node scripts/audit.mjs",
-    "audit:all": "node scripts/audit.mjs --all"
+    "audit:all": "node scripts/audit.mjs --all",
+    "package:release": "node scripts/package-release.mjs"
   },
   "exports": {
     "./client": "./src/client.ts",

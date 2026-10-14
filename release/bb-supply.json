@@ -1,0 +1,15 @@
+{
+  "status": "pending",
+  "tag": "fork-v0.46.0-20261014.1",
+  "source": "e7c2ef8409d575c463cba97f366a936e724bfd98",
+  "baseUrl": "https://github.com/hxy91819/bb/releases/download/fork-v0.46.0-20261014.1",
+  "runtime": {
+    "filename": "bb-fork-v0.46.0-20261014.1-linux-x64.tar.gz",
+    "sha256": null
+  },
+  "sdk": {
+    "filename": "bb-plugin-sdk-fork-v0.46.0-20261014.1.tgz",
+    "sha256": null,
+    "integrity": null
+  }
+}
