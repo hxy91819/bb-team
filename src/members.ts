@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import {
+  initializeInput,
   memberSchema,
   memberId,
   pageInput,
@@ -12,6 +13,7 @@ export const migrations = [
   "CREATE TABLE team (singleton INTEGER PRIMARY KEY CHECK(singleton=1), admin_member_id TEXT NOT NULL REFERENCES members(member_id))",
   "CREATE INDEX members_name_id ON members(display_name, member_id)",
   "CREATE TABLE scope (singleton INTEGER PRIMARY KEY CHECK(singleton=1), server_id TEXT NOT NULL)",
+  "UPDATE members SET display_name='Admin', avatar_id='admin' WHERE member_id=(SELECT admin_member_id FROM team WHERE singleton=1)",
 ];
 const columns =
   "member_id AS memberId, display_name AS displayName, avatar_id AS avatarId, created_at AS createdAt, updated_at AS updatedAt";
@@ -39,7 +41,10 @@ export function createMemberService(
   };
   const profile = (input: unknown) => {
     const value = profileInput.parse(input);
-    if (!avatars.some((a) => a.id === value.avatarId))
+    if (
+      value.avatarId === "admin" ||
+      !avatars.some((a) => a.id === value.avatarId)
+    )
       throw Error("invalid_avatar");
     return value;
   };
@@ -69,13 +74,27 @@ export function createMemberService(
     });
   };
   const initialize = (input: unknown) => {
-    const value = profile(input);
+    initializeInput.parse(input);
     const result = db
       .transaction(() => {
         const id = admin();
         if (id)
           return { status: "already_initialized" as const, adminMemberId: id };
-        const member = insert(value);
+        const now = Date.now();
+        const member = {
+          memberId: randomUUID(),
+          displayName: "Admin",
+          avatarId: "admin",
+          createdAt: now,
+          updatedAt: now,
+        };
+        db.prepare("INSERT INTO members VALUES(?,?,?,?,?)").run(
+          member.memberId,
+          member.displayName,
+          member.avatarId,
+          now,
+          now,
+        );
         db.prepare("INSERT INTO team VALUES(1,?)").run(member.memberId);
         return { status: "initialized" as const, member };
       })
@@ -153,6 +172,7 @@ export function createMemberService(
     avatarId: string;
   }) => {
     if (!get(input.memberId)) throw Error("member_not_found");
+    if (input.memberId === admin()) throw Error("admin_profile_fixed");
     const value = profile({
       displayName: input.displayName,
       avatarId: input.avatarId,

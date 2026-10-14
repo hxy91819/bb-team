@@ -6,13 +6,13 @@ const manifestSchema = z.object({
   avatars: z
     .array(
       z.object({
-        id: z.string().regex(/^[a-z]+$/),
+        id: z.string().regex(/^[a-z]+(?:-[a-z]+)*$/),
         name: z.string().min(1),
-        file: z.string().regex(/^[a-z]+\.png$/),
+        file: z.string().regex(/^[a-z]+(?:-[a-z]+)*\.png$/),
         alt: z.string().min(1),
       }),
     )
-    .length(6),
+    .length(21),
 });
 /** src/avatars.ts and bundled dist/server.js both sit one level below assets. */
 export function loadAvatarAssets() {
@@ -22,8 +22,9 @@ export function loadAvatarAssets() {
     JSON.parse(readFileSync(new URL("manifest.json", base), "utf8")),
   );
   if (
-    new Set(manifest.avatars.map((a) => a.id)).size !== 6 ||
-    !manifest.avatars.some((a) => a.id === "cat")
+    new Set(manifest.avatars.map((a) => a.id)).size !== 21 ||
+    !manifest.avatars.some((a) => a.id === "cat") ||
+    !manifest.avatars.some((a) => a.id === "admin")
   )
     throw Error("Invalid avatar IDs");
   return manifest.avatars.map((avatar) => {

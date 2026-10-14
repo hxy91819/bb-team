@@ -15,6 +15,7 @@ export const profileInput = z
     avatarId: z.string().max(40).default("cat"),
   })
   .strict();
+export const initializeInput = z.object({}).strict();
 export const memberSchema = z.object({
   memberId,
   displayName: z.string(),
@@ -181,7 +182,7 @@ export const activityOutput = z.discriminatedUnion("mode", [
 ]) satisfies z.ZodType<ActivityResponse>;
 export const rpcContract = defineRpcContract({
   initialize: {
-    input: profileInput,
+    input: initializeInput,
     output: z.discriminatedUnion("status", [
       z.object({ status: z.literal("initialized"), member: memberSchema }),
       z.object({

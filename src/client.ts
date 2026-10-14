@@ -4,8 +4,7 @@ export type TeamClient = PluginRpcClient<TeamContract>;
 /** Accept useRpc<TeamContract>() or a caller-supplied typed RPC transport. */
 export function createTeamClient(rpc: TeamClient) {
   return {
-    initialize: (displayName: string, avatarId = "cat") =>
-      rpc.call("initialize", { displayName, avatarId }),
+    initialize: () => rpc.call("initialize", {}),
     list: (search = "", limit = 20, cursor: string | null = null) =>
       rpc.call("members_list", { search, limit, cursor }),
     resolve: (name: string, limit = 10, cursor: string | null = null) =>
@@ -32,11 +31,11 @@ export function createTeamSdkClient(
   pluginId = "team",
 ) {
   return {
-    initialize: (displayName: string, avatarId = "cat") =>
+    initialize: () =>
       sdk.plugins.callRpc({
         pluginId,
         method: "initialize",
-        input: { displayName, avatarId },
+        input: {},
         outputSchema: rpcContract.initialize.output,
       }),
     list: (search = "", limit = 20, cursor: string | null = null) =>

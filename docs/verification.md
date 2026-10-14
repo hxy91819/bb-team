@@ -1,5 +1,33 @@
 # Verification record
 
+## v0.2 identity and Admin work in progress
+
+The next revision moves selection into one public app-wide overlay, with a
+persistent identity button, a shared sidebar entry, and the persistent compact
+drawer. Default Admin creation is automatic; migration keeps its existing UUID.
+The asset-only checkpoint adds 14 ordinary avatars and one dedicated Admin PNG,
+with all six original PNGs byte-identical.
+
+Current local evidence is `/tmp/bb-team-v02-pbj6j2khqk`: the real-SQLite
+empty-initialization baseline fails for the expected required-profile reason;
+the new fixed Admin implementation passes. The complete check now passes
+17 tests, lint, formatting, typecheck and the matching e7c/Node 24 build.
+The user systemd manager failure and initial same-unit scope refusal are
+retained separately. Checks resumed under the shared lock and a real system
+scope through the existing runner, with measured 5/7 GiB memory and 300% CPU
+limits; no service was restarted. Real browser attempts have not yet completed:
+an entry wait matched a hidden dialog, and a corrected second-window run still
+had no appOverlay container after 30 seconds although the new sidebar action
+was present. A real old-version upgrade preserved Admin UUID, scope, ordinary
+profiles, thread metadata and activity, but its frontend overlay was absent
+after changed-bundle reload too. These failures were reported to the BB owner;
+neither full browser journey is a pass. Owned instances and data were cleaned.
+Incremental independent review has no remaining P0/P1 findings.
+The BB list contribution v2 SDK and its candidate runtime are still
+pending, so avatar-only leading placement and grouping-specific row assertions
+remain pending too. The completed v0.1 evidence below is historical and does
+not upgrade this revision to a pass.
+
 ## Thread integration candidate — 2026-10-14
 
 This phase integrates native thread attribution, grouping and retained

@@ -9,9 +9,12 @@ is pinned to the verified BB Release asset URL and integrity.
 
 ## Implemented behavior
 
-- A synchronous SQLite immediate transaction creates exactly one first
-  administrator. A losing initializer receives `already_initialized`; rollback
-  leaves no orphan member. IDs are server-generated UUIDs and remain fixed.
+- Plugin startup creates exactly one default `Admin` with the dedicated `admin`
+  avatar in a synchronous SQLite immediate transaction. No client is selected
+  automatically. An appended migration fixes the existing administrator's name
+  and avatar while preserving its UUID, other members and thread attribution.
+  Admin's profile is fixed; ordinary members remain editable. `initialize {}`
+  is idempotent; obsolete name/avatar initialization inputs are rejected.
 - Administrator identity controls only member creation. Names are trimmed and
   contain 1–80 Unicode code points; duplicate names are allowed. Exact name
   resolution reports ambiguity, while list search/pagination runs in SQL with
@@ -25,7 +28,7 @@ is pinned to the verified BB Release asset URL and integrity.
   and the browser's storage profile/container. Persistent defaults use
   `localStorage`; window overrides use `sessionStorage`, including explicit
   `null`. A window pins the initial value, so another window's default change
-  does not switch it. Remember writes both; only-this-window writes session
+  does not switch it. The main “选择” action writes both; the advanced only-this-window action writes session
   only; clear writes null; restore rereads the current default and pins it;
   forget deletes the default and clears this window. Storage failure falls
   back to memory and reports that persistence cannot be guaranteed.
@@ -36,14 +39,16 @@ is pinned to the verified BB Release asset URL and integrity.
 - CLI runs **on the server** and uses explicit `--actor` / `--member`. It does
   not implement client-local select/show/clear or write a global current user.
   Browser identity and CLI identity never synchronize implicitly.
-- Timezone is one ordinary `bb.settings.define` field, validated by an IANA
-  schema. The server uses UTC while unset. An absent stored setting is distinct
-  from explicitly saved UTC, allowing initialization to suggest the browser's
-  timezone without overwriting an existing preference. Only the winning
-  initializer saves its confirmed timezone, after creating the member. These
-  are two writes: a failed setting save offers an independent retry.
-  Later settings/RPC/CLI/SDK edits require no administrator identity.
-- Six generated PNG avatars use `assets/avatars/manifest.json` as the only
+- Timezone is one ordinary `bb.settings.define` field, validated as IANA.
+  The server uses UTC while unset; the UI suggests the browser timezone until
+  a team preference is saved. Timezone saving is independent of default Admin
+  creation and needs no administrator identity.
+- An app-wide identity picker opens once after an absent or invalid saved
+  identity has been confirmed. Loading/errors are distinct; cancellation does
+  not loop. A persistent avatar/name button remains available with the sidebar
+  closed, and the sidebar/Team entry opens the same picker. Ordinary selection
+  remembers the choice; window-only and forgetting controls are secondary.
+- Twenty selectable member PNG avatars plus one dedicated Admin avatar use `assets/avatars/manifest.json` as the only
   inventory. Only the backend reads the committed PNGs, using package-relative file URLs,
   and serves same-origin authenticated plugin HTTP routes. URLs include content hashes;
   matching hashes use immutable caching, and routes support ETag validation.
@@ -123,6 +128,9 @@ it does not claim a complete thread integration run.
 
 ```bash
 node scripts/live-smoke.mjs
+# Upgrade journey: installs the exact older local Git tree in the disposable
+# instance, then reloads current source and checks UUID/data/browser continuity.
+BB_TEAM_UPGRADE_FROM=cd395a06fae2d6c8c4b91597cfd7688b4c992a7f node scripts/live-smoke.mjs
 ```
 
 On a shared BB development host, run each entire heavy job under the shared
@@ -143,7 +151,7 @@ separate from the ordinary CI job.
 `bb team --help` is the command inventory. All commands accept `--json`.
 
 ```bash
-bb team initialize --name "Admin" --avatar cat --json
+bb team initialize --json
 bb team list --search "Name" --limit 20 --json
 bb team resolve --name "Name" --limit 10 --json
 bb team get --member MEMBER_ID --json

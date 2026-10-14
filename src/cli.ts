@@ -4,7 +4,7 @@ import { rpcContract } from "./contracts.js";
 import type { createMemberService } from "./members.js";
 import type { createActivityService } from "./activity.js";
 export const usage =
-  "bb team initialize --name NAME [--avatar cat]\nbb team list [--search NAME] [--limit 20] [--cursor ID]\nbb team resolve --name NAME [--limit 10] [--cursor ID]\nbb team get --member ID\nbb team create --actor ADMIN_ID --name NAME [--avatar cat]\nbb team update-self --member ID --name NAME [--avatar cat]\nbb team identity --member ID\nbb team avatars\nbb team timezone [--timezone IANA]\nbb team activity [details --thread ID] [--member ID | --name NAME] [--date today|YYYY-MM-DD | --from-date YYYY-MM-DD --to-date YYYY-MM-DD] [--project ID] [--limit 20] [--max-chars 8000] [--cursor CURSOR]\nAll commands accept --json; identity is trusted self-selection, not authentication. Activity reports currently attributed threads, not per-message actors. --to-date is exclusive; cursors freeze dates/timezone. JSON and text activity output use the same complete compact JSON budget.";
+  "bb team initialize\nbb team list [--search NAME] [--limit 20] [--cursor ID]\nbb team resolve --name NAME [--limit 10] [--cursor ID]\nbb team get --member ID\nbb team create --actor ADMIN_ID --name NAME [--avatar cat]\nbb team update-self --member ID --name NAME [--avatar cat]\nbb team identity --member ID\nbb team avatars\nbb team timezone [--timezone IANA]\nbb team activity [details --thread ID] [--member ID | --name NAME] [--date today|YYYY-MM-DD | --from-date YYYY-MM-DD --to-date YYYY-MM-DD] [--project ID] [--limit 20] [--max-chars 8000] [--cursor CURSOR]\nAll commands accept --json; identity is trusted self-selection, not authentication. Activity reports currently attributed threads, not per-message actors. --to-date is exclusive; cursors freeze dates/timezone. JSON and text activity output use the same complete compact JSON budget.";
 export function runTeamCli(
   service: ReturnType<typeof createMemberService>,
   avatars: () => unknown,
@@ -72,7 +72,11 @@ export function runTeamCli(
       let result: unknown;
       switch (positionals[0]) {
         case "initialize":
-          result = service.initialize(profile);
+          if (Object.keys(values).some((key) => key !== "json"))
+            throw Error(
+              "initialize accepts no profile fields; Admin is created automatically with a fixed name and avatar.",
+            );
+          result = service.initialize({});
           break;
         case "list":
           result = service.list({

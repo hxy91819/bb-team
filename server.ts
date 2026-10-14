@@ -24,6 +24,8 @@ export default async function plugin(bb: BbPluginApi) {
   const members = createMemberService(db, assets, () =>
     bb.realtime.publish("members.changed", null),
   );
+  // Ensure one default administrator before any client can observe the team.
+  members.initialize({});
   const settings = bb.settings.define({
     timezone: {
       type: "string",

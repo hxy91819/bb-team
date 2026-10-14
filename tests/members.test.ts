@@ -30,18 +30,14 @@ test("failed initialization rolls back its member, retry wins, and later initial
     db.exec(
       "CREATE TRIGGER reject_team BEFORE INSERT ON team BEGIN SELECT RAISE(ABORT,'injected failure'); END",
     );
-    expect(() => service.initialize({ displayName: "首任" })).toThrow(
-      "injected failure",
-    );
+    expect(() => service.initialize({})).toThrow("injected failure");
     expect(db.prepare("SELECT COUNT(*) AS count FROM members").get()).toEqual({
       count: 0,
     });
     db.exec("DROP TRIGGER reject_team");
-    const first = service.initialize({ displayName: "首任" });
+    const first = service.initialize({});
     expect(first.status).toBe("initialized");
-    expect(service.initialize({ displayName: "第二人" }).status).toBe(
-      "already_initialized",
-    );
+    expect(service.initialize({}).status).toBe("already_initialized");
     expect(service.list({}).members).toHaveLength(1);
   } finally {
     db.close();
@@ -54,7 +50,7 @@ test("independent SQLite connections race for one administrator", async () => {
   db.pragma("journal_mode=WAL");
   migrations.forEach((sql) => db.exec(sql));
   db.close();
-  const code = `const {parentPort,workerData}=require('node:worker_threads');const DB=require('better-sqlite3');(async()=>{const {tsImport}=await import('tsx/esm/api');const {createMemberService}=await tsImport(workerData.service,workerData.service);const db=new DB(workerData.path);db.pragma('busy_timeout=5000');const service=createMemberService(db,workerData.avatars,()=>{});parentPort.postMessage('ready');parentPort.once('message',()=>{try{parentPort.postMessage(service.initialize({displayName:'race'}).status);}catch(e){parentPort.postMessage(String(e));}finally{db.close();}});})();`;
+  const code = `const {parentPort,workerData}=require('node:worker_threads');const DB=require('better-sqlite3');(async()=>{const {tsImport}=await import('tsx/esm/api');const {createMemberService}=await tsImport(workerData.service,workerData.service);const db=new DB(workerData.path);db.pragma('busy_timeout=5000');const service=createMemberService(db,workerData.avatars,()=>{});parentPort.postMessage('ready');parentPort.once('message',()=>{try{parentPort.postMessage(service.initialize({}).status);}catch(e){parentPort.postMessage(String(e));}finally{db.close();}});})();`;
   try {
     const workers = [0, 1].map(
       () =>
@@ -104,11 +100,12 @@ test("independent SQLite connections race for one administrator", async () => {
 test("member service enforces create policy, stable IDs, literal search, ambiguity and input boundaries", () => {
   const { db, service } = memory();
   try {
-    const initialized = service.initialize({ displayName: "  管理员  " });
+    const initialized = service.initialize({});
     if (initialized.status !== "initialized")
       throw Error("initialization failed");
     const admin = initialized.member;
-    expect(admin.displayName).toBe("管理员");
+    expect(admin.displayName).toBe("Admin");
+    expect(admin.avatarId).toBe("admin");
     const a = service.create({
       actorMemberId: admin.memberId,
       displayName: "同名",
@@ -197,13 +194,14 @@ test("real plugin entry shares validated RPC, script SDK, CLI, settings and real
     );
     const sdk = createTeamSdkClient(bb.sdk);
     const initialized = rpcContract.initialize.output.parse(
-      await harness.behavior.callRpc("initialize", { displayName: "Admin" }),
+      await harness.behavior.callRpc("initialize", {}),
     );
-    if (initialized.status !== "initialized") throw Error("init");
+    if (initialized.status !== "already_initialized")
+      throw Error("default admin missing");
     const cli = await harness.behavior.runCli([
       "create",
       "--actor",
-      initialized.member.memberId,
+      initialized.adminMemberId,
       "--name",
       "Member",
       "--avatar",
@@ -248,7 +246,7 @@ test("real plugin entry shares validated RPC, script SDK, CLI, settings and real
     await expect(
       harness.behavior.callRpc("members_updateSelf", {
         memberId: member.memberId,
-        actorMemberId: initialized.member.memberId,
+        actorMemberId: initialized.adminMemberId,
         displayName: "Bad",
         avatarId: "cat",
       }),
@@ -328,4 +326,128 @@ test("public package stays inside declared public SDK boundary", async () => {
   );
   expect(result.violations).toEqual([]);
   expect(result.privateDependencies).toEqual([]);
+});
+
+test("upgrade preserves the administrator UUID, members and timestamps while fixing only administrator presentation", () => {
+  const db = new Database(":memory:");
+  try {
+    migrations.slice(0, 4).forEach((sql) => db.exec(sql));
+    const adminId = "00000000-0000-4000-8000-000000000001";
+    const otherId = "00000000-0000-4000-8000-000000000002";
+    db.prepare("INSERT INTO members VALUES(?,?,?,?,?)").run(
+      adminId,
+      "Old admin",
+      "cat",
+      10,
+      20,
+    );
+    db.prepare("INSERT INTO members VALUES(?,?,?,?,?)").run(
+      otherId,
+      "Unchanged",
+      "fox",
+      30,
+      40,
+    );
+    db.prepare("INSERT INTO team VALUES(1,?)").run(adminId);
+    migrations.slice(4).forEach((sql) => db.exec(sql));
+    const service = createMemberService(db, avatars, () => {});
+    expect(service.initialize({})).toEqual({
+      status: "already_initialized",
+      adminMemberId: adminId,
+    });
+    expect(service.get(adminId)).toEqual({
+      memberId: adminId,
+      displayName: "Admin",
+      avatarId: "admin",
+      createdAt: 10,
+      updatedAt: 20,
+    });
+    expect(service.get(otherId)).toEqual({
+      memberId: otherId,
+      displayName: "Unchanged",
+      avatarId: "fox",
+      createdAt: 30,
+      updatedAt: 40,
+    });
+    expect(service.list({}).members).toHaveLength(2);
+    expect(() =>
+      service.updateSelf({
+        memberId: adminId,
+        displayName: "Renamed",
+        avatarId: "cat",
+      }),
+    ).toThrow("admin_profile_fixed");
+    expect(() =>
+      service.create({
+        actorMemberId: adminId,
+        displayName: "Ordinary",
+        avatarId: "admin",
+      }),
+    ).toThrow("invalid_avatar");
+    expect(() =>
+      service.updateSelf({
+        memberId: otherId,
+        displayName: "Ordinary",
+        avatarId: "admin",
+      }),
+    ).toThrow("invalid_avatar");
+    expect(() => service.initialize({ displayName: "Ignored?" })).toThrow();
+    expect(service.get(adminId)?.displayName).toBe("Admin");
+  } finally {
+    db.close();
+  }
+});
+
+test("fresh plugin automatically exposes exactly one fixed Admin and rejects obsolete initialization and profile changes over RPC/CLI", async () => {
+  const { bb, harness } = createFakePluginHost({ pluginId: "team" });
+  await plugin(bb);
+  try {
+    const state = rpcContract.state.output.parse(
+      await harness.behavior.callRpc("state"),
+    );
+    const members = rpcContract.members_list.output.parse(
+      await harness.behavior.callRpc("members_list", {}),
+    ).members;
+    expect(members).toHaveLength(1);
+    expect(members[0]).toMatchObject({
+      memberId: state.adminMemberId,
+      displayName: "Admin",
+      avatarId: "admin",
+    });
+    await expect(
+      harness.behavior.callRpc("initialize", { displayName: "Other" }),
+    ).rejects.toThrow();
+    expect(
+      await harness.behavior.runCli(["initialize", "--name", "Other"]),
+    ).toMatchObject({ exitCode: 1 });
+    expect(
+      await harness.behavior.runCli(["initialize", "--avatar", "fox"]),
+    ).toMatchObject({ exitCode: 1 });
+    expect(
+      await harness.behavior.runCli(["initialize", "--json"]),
+    ).toMatchObject({ exitCode: 0 });
+    await expect(
+      harness.behavior.callRpc("members_updateSelf", {
+        memberId: state.adminMemberId,
+        displayName: "Other",
+        avatarId: "cat",
+      }),
+    ).rejects.toThrow("admin_profile_fixed");
+    expect(
+      await harness.behavior.runCli([
+        "update-self",
+        "--member",
+        state.adminMemberId!,
+        "--name",
+        "Other",
+      ]),
+    ).toMatchObject({ exitCode: 1, stderr: "admin_profile_fixed" });
+    const list = rpcContract.avatars_list.output.parse(
+      await harness.behavior.callRpc("avatars_list"),
+    );
+    expect(list.filter((a) => a.id !== "admin")).toHaveLength(20);
+    expect(list.filter((a) => a.id === "admin")).toHaveLength(1);
+  } finally {
+    await harness.lifecycle.dispose();
+  }
 });

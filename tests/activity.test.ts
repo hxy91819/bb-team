@@ -69,10 +69,10 @@ test("activity RPC/CLI freezes DST dates, preserves coverage and resumes after t
   await plugin(bb);
   try {
     const init = rpcContract.initialize.output.parse(
-      await harness.behavior.callRpc("initialize", { displayName: "A" }),
+      await harness.behavior.callRpc("initialize", {}),
     );
-    if (init.status !== "initialized") throw Error("init");
-    const member = init.member.memberId;
+    if (init.status !== "already_initialized") throw Error("init");
+    const member = init.adminMemberId;
     const activityFixture = async (args: {
       cursor?: string;
       from: number;
@@ -144,6 +144,10 @@ test("activity RPC/CLI freezes DST dates, preserves coverage and resumes after t
       actorMemberId: member,
       displayName: "A",
     });
+    await harness.behavior.callRpc("members_create", {
+      actorMemberId: member,
+      displayName: "A",
+    });
     const ambiguous = await harness.behavior.runCli([
       "activity",
       "--name",
@@ -161,10 +165,10 @@ test("creation attribution distinguishes explicit null, parent inheritance, and 
   await plugin(bb);
   try {
     const init = rpcContract.initialize.output.parse(
-      await harness.behavior.callRpc("initialize", { displayName: "A" }),
+      await harness.behavior.callRpc("initialize", {}),
     );
-    if (init.status !== "initialized") throw Error("init");
-    const memberId = init.member.memberId;
+    if (init.status !== "already_initialized") throw Error("init");
+    const memberId = init.adminMemberId;
     const base = {
       creation: {
         projectId: "p",

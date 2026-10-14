@@ -40,7 +40,7 @@ Check the receipt's BB tag/source against the matching BB runtime's
 release instructions; do not replace it with stock BB 0.46.0.
 
 The plugin archive contains package.json/lockfile, server/app/source entries,
-compiled `dist`, the six original PNGs and their manifest, the on-demand
+compiled `dist`, the 20 ordinary avatar PNGs, dedicated Admin PNG and their manifest, the on-demand
 skill, and project/vendored/dependency licenses. It contains no node_modules,
 credentials or machine-specific source maps. The JSON receipt identifies the
 plugin commit and compatible BB source. The full dependency license texts are
