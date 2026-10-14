@@ -24,7 +24,7 @@ jobs:
       - run: node --check scripts/check-install.mjs && node --check scripts/live-smoke.mjs
       - name: Build complete plugin archive from this commit
         run: node scripts/package-release.mjs "$RUNNER_TEMP/team-release"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: team-release-${{ github.sha }}
           path: ${{ runner.temp }}/team-release/
