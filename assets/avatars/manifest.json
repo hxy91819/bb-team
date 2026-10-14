@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "avatars": [
+    {
+      "id": "cat",
+      "name": "小猫",
+      "file": "cat.png",
+      "alt": "小猫头像"
+    },
+    {
+      "id": "fox",
+      "name": "狐狸",
+      "file": "fox.png",
+      "alt": "狐狸头像"
+    },
+    {
+      "id": "owl",
+      "name": "猫头鹰",
+      "file": "owl.png",
+      "alt": "猫头鹰头像"
+    },
+    {
+      "id": "panda",
+      "name": "熊猫",
+      "file": "panda.png",
+      "alt": "熊猫头像"
+    },
+    {
+      "id": "koala",
+      "name": "考拉",
+      "file": "koala.png",
+      "alt": "考拉头像"
+    },
+    {
+      "id": "frog",
+      "name": "青蛙",
+      "file": "frog.png",
+      "alt": "青蛙头像"
+    }
+  ]
+}
