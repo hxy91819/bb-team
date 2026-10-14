@@ -276,10 +276,24 @@ function ProfileForm({
     </form>
   );
 }
-function IdentityOverlay() {
+function IdentityOverlay({
+  listSupported = true,
+}: {
+  listSupported?: boolean;
+}) {
   const team = useTeam();
   return team.state ? (
-    <ReadyIdentity team={{ ...team, state: team.state }} />
+    <>
+      {!listSupported && (
+        <p
+          role="alert"
+          className="fixed right-3 bottom-32 z-40 max-w-xs rounded-lg border bg-background p-3 text-sm"
+        >
+          成员列表需要支持列表贡献 v2 的 BB，请升级到 README 指定的兼容版本。
+        </p>
+      )}
+      <ReadyIdentity team={{ ...team, state: team.state }} />
+    </>
   ) : (
     <div
       className="fixed right-3 bottom-20 z-40 rounded-lg border border-border bg-background p-2 text-sm"
@@ -311,6 +325,7 @@ function ReadyIdentity({
   team: ReturnType<typeof useTeam> & { state: TeamState };
 }) {
   const { rpc, state, avatars, revision, refresh } = team;
+  const compact = useIsCompactViewport();
   const identity = identityFor(
     JSON.stringify([location.origin, state.serverScope]),
   );
@@ -464,7 +479,7 @@ function ReadyIdentity({
       >
         <Button
           variant="outline"
-          className="fixed right-3 bottom-20 z-40 max-w-[11rem] gap-2 rounded-full bg-background shadow-md"
+          className={`fixed right-3 z-40 max-w-[11rem] gap-2 rounded-full bg-background shadow-md ${compact ? "top-12" : "bottom-20"}`}
           aria-label={
             selected ? `当前身份：${selected.displayName}，切换身份` : label
           }
@@ -758,6 +773,7 @@ export default definePluginApp((app) => {
     typeof app.slots.experimental_threadListGrouping === "function";
   const hasRowDecoration =
     typeof app.slots.experimental_threadRowDecoration === "function";
+  const hasListV2 = app.experimental_threadListContributionVersion >= 2;
   const hasThreadIntegration =
     hasThreadCreation && hasGrouping && hasRowDecoration;
   if (hasThreadIntegration) {
@@ -818,7 +834,7 @@ export default definePluginApp((app) => {
       },
     });
   }
-  if (hasThreadIntegration) {
+  if (hasThreadIntegration && hasListV2) {
     app.slots.experimental_threadListGrouping({
       id: "members",
       title: "Team members",
@@ -829,26 +845,19 @@ export default definePluginApp((app) => {
           : { status: "ready", group: ownerLabel(thread.id, data) },
     });
   }
-  if (hasThreadIntegration) {
+  if (hasThreadIntegration && hasListV2) {
     app.slots.experimental_threadRowDecoration({
       id: "member",
       title: "Team member",
       useData: useOwnership,
-      item: ({ thread, data }) => {
-        if (data.status !== "ready")
-          return {
-            text:
-              data.status === "loading"
-                ? "Loading member…"
-                : "Member unavailable",
-            accessibleLabel:
-              data.status === "loading"
-                ? "Thread member is loading"
-                : "Thread member lookup failed",
-          };
+      item: ({ thread, data, groupingKey }) => {
+        if (groupingKey === "team/members" || data.status !== "ready")
+          return null;
         const owner = ownerLabel(thread.id, data);
+        if (!owner.avatar) return null;
         return {
-          text: owner.label,
+          text: null,
+          placement: "leading",
           accessibleLabel: `Thread member: ${owner.label}`,
           avatar: owner.avatar,
         };
@@ -860,17 +869,17 @@ export default definePluginApp((app) => {
     title: "Team",
     icon: "Users",
     path: "members",
-    component: hasIdentityUi ? TeamPage : UnsupportedTeamPage,
+    component: hasIdentityUi && hasListV2 ? TeamPage : UnsupportedTeamPage,
   });
   app.slots.settingsSection({
     id: "members",
     title: "Team members",
-    component: hasIdentityUi ? TeamPage : UnsupportedTeamPage,
+    component: hasIdentityUi && hasListV2 ? TeamPage : UnsupportedTeamPage,
   });
   if (hasIdentityUi) {
     app.slots.experimental_appOverlay({
       id: "identity",
-      component: IdentityOverlay,
+      component: () => <IdentityOverlay listSupported={hasListV2} />,
     });
     app.experimental_icons.register({
       name: "team-current-member",

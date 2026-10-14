@@ -2,8 +2,8 @@
 
 Independent BB plugin for trusted, self-selected team members, native thread
 attribution, member grouping/row labels and on-demand retained activity.
-Requires [BB fork `fork-v0.46.0-20261014.1`](https://github.com/hxy91819/bb/releases/tag/fork-v0.46.0-20261014.1),
-source `e7c2ef8409d575c463cba97f366a936e724bfd98`, and its matching SDK.
+Requires [BB fork `fork-v0.46.0-20261014.2`](https://github.com/hxy91819/bb/releases/tag/fork-v0.46.0-20261014.2),
+source `955e181051f0571e0fcecbc9a82de36eb5fb697a`, and its matching SDK.
 Stock BB 0.46.0 / SDK 0.6.37 do not supply these extensions. The SDK dependency
 is pinned to the verified BB Release asset URL and integrity.
 
@@ -65,9 +65,12 @@ is pinned to the verified BB Release asset URL and integrity.
   source does not implicitly supply an identity. Starting/retrying an existing
   thread never reassigns it. Old threads remain unassigned.
 - Select **Threads → Organize → Team members** in the native sidebar. Group IDs
-  use member UUIDs; row labels show each child's actual attribution without
-  moving children out of the native tree. Loading/error states are distinct
-  from unassigned. Metadata and profiles are fetched in bounded batches.
+  use member UUIDs; member groups show native project badges without repeating
+  member avatars or names on rows. Other modes show only a leading member
+  avatar, with the name in its tooltip/accessibility label. Unassigned rows
+  omit that avatar. Children stay in the native tree. Group loading/error
+  states remain distinct from unassigned; metadata and profiles use bounded
+  batches. This requires list contribution capability version 2.
 - `bb team activity` queries the host's retained evidence only when requested.
   It includes archived threads and today's continuation of older threads,
   excludes inherited fork history where boundaries are known, and reports
@@ -118,7 +121,12 @@ instance. `scripts/live-smoke.mjs` starts the selected matching server with a fr
 temporary data directory, installs this package, exercises real browser and
 wire flows, then stops the server and deletes only its own temporary data.
 It installs a temporary copy so changed-bundle reload verification cannot
-modify the checkout. Set `BB_TEAM_EVIDENCE_DIR` to retain screenshots.
+modify the checkout. Set `BB_TEAM_EVIDENCE_DIR` to retain screenshots. For a complete release archive
+installation, extract it and install production dependencies first, then set
+`BB_TEAM_INSTALL_DIR` to that directory. The smoke installs that actual path
+without copying source or linking development dependencies; keep the directory
+until the isolated run finishes. This mode cannot be combined with the legacy
+upgrade journey.
 Extended native creation/fork/handoff and activity journeys additionally need
 `BB_TEAM_TEST_PROVIDER_DIR`: a disposable public-SDK provider plugin registering
 `team-echo` / `fake-model`, with checkpoint forks and deterministic echo turns.

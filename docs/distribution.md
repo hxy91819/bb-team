@@ -2,14 +2,14 @@
 
 ## Supply status
 
-The compatible [BB release](https://github.com/hxy91819/bb/releases/tag/fork-v0.46.0-20261014.1)
-is `fork-v0.46.0-20261014.1`, source
-`e7c2ef8409d575c463cba97f366a936e724bfd98`.
+The compatible [BB release](https://github.com/hxy91819/bb/releases/tag/fork-v0.46.0-20261014.2)
+is `fork-v0.46.0-20261014.2`, source
+`955e181051f0571e0fcecbc9a82de36eb5fb697a`.
 [release/bb-supply.json](../release/bb-supply.json) records verified runtime and
 SDK SHA256 checksums and the SDK integrity used by the lockfile.
 
 The SDK URL is
-`https://github.com/hxy91819/bb/releases/download/fork-v0.46.0-20261014.1/bb-plugin-sdk-fork-v0.46.0-20261014.1.tgz`.
+`https://github.com/hxy91819/bb/releases/download/fork-v0.46.0-20261014.2/bb-plugin-sdk-fork-v0.46.0-20261014.2.tgz`.
 It remains `@get-bb/plugin-sdk` version `0.6.37`, but comes from that BB source;
 the npm registry's same version does not provide the fork APIs. package.json
 and package-lock.json pin this URL and its measured integrity. No local
@@ -17,12 +17,12 @@ and package-lock.json pin this URL and its measured integrity. No local
 
 ## Complete archive installation
 
-The plugin release provides `bb-team-v0.1.0.tar.gz`, its `.tar.gz.sha256`,
+The plugin release provides `bb-team-v0.2.0.tar.gz`, its `.tar.gz.sha256`,
 and a JSON source/checksum receipt. Download all three from the same plugin
 release:
 
 ```bash
-PLUGIN_TAG='v0.1.0'
+PLUGIN_TAG='v0.2.0'
 ARCHIVE="bb-team-${PLUGIN_TAG}.tar.gz"
 BASE_URL="https://github.com/hxy91819/bb-team/releases/download/${PLUGIN_TAG}"
 curl --fail --location "$BASE_URL/$ARCHIVE" --output "$ARCHIVE"
@@ -69,7 +69,7 @@ directory after installing: local path installations continue to use it.
 Use the same compatible BB runtime and an actual published plugin tag:
 
 ```bash
-PLUGIN_TAG='v0.1.0'
+PLUGIN_TAG='v0.2.0'
 "$BB_RUNTIME/bin/bb" plugin install "git:https://github.com/hxy91819/bb-team.git@${PLUGIN_TAG}"
 ```
 

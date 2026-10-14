@@ -1,15 +1,15 @@
 {
   "status": "verified",
-  "tag": "fork-v0.46.0-20261014.1",
-  "source": "e7c2ef8409d575c463cba97f366a936e724bfd98",
-  "baseUrl": "https://github.com/hxy91819/bb/releases/download/fork-v0.46.0-20261014.1",
+  "tag": "fork-v0.46.0-20261014.2",
+  "source": "955e181051f0571e0fcecbc9a82de36eb5fb697a",
+  "baseUrl": "https://github.com/hxy91819/bb/releases/download/fork-v0.46.0-20261014.2",
   "runtime": {
-    "filename": "bb-fork-v0.46.0-20261014.1-linux-x64.tar.gz",
-    "sha256": "97ea2cc93817db8304b9e1510f904e6f90c8ebd67d371d0deb5841b63abdafcf"
+    "filename": "bb-fork-v0.46.0-20261014.2-linux-x64.tar.gz",
+    "sha256": "b72a09d947be0c6e7349fa7979cebcbde3cf246d33861b60b893e03ad187c17c"
   },
   "sdk": {
-    "filename": "bb-plugin-sdk-fork-v0.46.0-20261014.1.tgz",
-    "sha256": "94c1fd04aa9c96863a70087d4bc695e138c95379feec839268ea0221ef01e1e2",
-    "integrity": "sha512-0ycfE6sYoG7Yz4fDUMMxcDmoG1y7GHrOpMYFmZ5/2pJYvlRQTXAN/1MPAyUDp1ZyzjKV4hYU9QtfzxUQrvh7uw=="
+    "filename": "bb-plugin-sdk-fork-v0.46.0-20261014.2.tgz",
+    "sha256": "ecf4f212222ebd843e09ce5270ce089cf5de078782fdff28f5df8e4984c718ee",
+    "integrity": "sha512-+fEZ4tvf8HdNIbVCCwND/aj3vzcmCXvvKgK9n+EtzSaVAjqojfTqcUvkffr1uDKuRDhvgktcQu1wkDXq7M72tw=="
   }
 }

@@ -1,32 +1,42 @@
 # Verification record
 
-## v0.2 identity and Admin work in progress
+## v0.2 official supply acceptance
 
-The next revision moves selection into one public app-wide overlay, with a
-persistent identity button, a shared sidebar entry, and the persistent compact
-drawer. Default Admin creation is automatic; migration keeps its existing UUID.
-The asset-only checkpoint adds 14 ordinary avatars and one dedicated Admin PNG,
-with all six original PNGs byte-identical.
+The v0.2 implementation uses BB `fork-v0.46.0-20261014.2`, source
+`955e181051f0571e0fcecbc9a82de36eb5fb697a`, Node 24.15.0 and its URL-pinned
+SDK. Downloaded runtime/SDK SHA256 and SDK SHA512 integrity were independently
+verified; receipts are in `release/bb-supply.json`.
 
-Current local evidence is `/tmp/bb-team-v02-pbj6j2khqk`: the real-SQLite
-empty-initialization baseline fails for the expected required-profile reason;
-the new fixed Admin implementation passes. The complete check now passes
-17 tests, lint, formatting, typecheck and the matching e7c/Node 24 build.
-The user systemd manager failure and initial same-unit scope refusal are
-retained separately. Checks resumed under the shared lock and a real system
-scope through the existing runner, with measured 5/7 GiB memory and 300% CPU
-limits; no service was restarted. Real browser attempts have not yet completed:
-an entry wait matched a hidden dialog, and a corrected second-window run still
-had no appOverlay container after 30 seconds although the new sidebar action
-was present. A real old-version upgrade preserved Admin UUID, scope, ordinary
-profiles, thread metadata and activity, but its frontend overlay was absent
-after changed-bundle reload too. These failures were reported to the BB owner;
-neither full browser journey is a pass. Owned instances and data were cleaned.
-Incremental independent review has no remaining P0/P1 findings.
-The BB list contribution v2 SDK and its candidate runtime are still
-pending, so avatar-only leading placement and grouping-specific row assertions
-remain pending too. The completed v0.1 evidence below is historical and does
-not upgrade this revision to a pass.
+The complete check passes 17 tests, lint, formatting, typecheck and matching
+build; production dependency audit reports zero vulnerabilities. Real SQLite
+covers fixed Admin creation, append-only migration preserving the old UUID,
+ordinary profile editing and rejected obsolete initialization fields.
+
+Official fresh browser acceptance passed automatic identity selection,
+cancellation/manual reopening, default Admin and 20 loaded ordinary avatars,
+independent windows and refresh, live profile changes, native creation/fork/
+handoff/null/invalid-draft behavior, retained multilevel-fork and archive
+activity, list-v2 grouping/leading avatar behavior, disable/enable and
+390x844 Chromium/WebKit drawer scrolling/pagination/Search recovery.
+The old cd395a source upgrade also passed UUID, scope, profile, thread metadata,
+activity and selected browser identity continuity through changed-bundle reload.
+These runs use a deterministic public-protocol provider, not a paid AI service.
+
+Local evidence is `/tmp/bb-team-v02-official-pbj6j2khqk/INDEX.md`. Original e7c
+missing-overlay failures remain in `/tmp/bb-team-v02-pbj6j2khqk/INDEX.md`;
+the official .2 run closes those failures. Additional screenshot-driven checks
+passed compact identity/composer separation in both browsers and real
+cross-project child/pinned badges. They also exposed a host layout defect:
+16px leading avatars shrink to 1.86–11.20px in chronological rows. Actual
+browser dimensions and an assertion red are retained; the minimum-width
+assertion now catches this and publication waits for the host repair. Failed script waits/fixture setup and
+locator attempts are retained and not counted as passing runs. Incremental
+review is tracked separately from actual browser results.
+
+All heavy work uses the shared lock and actual system package scope through
+the existing runner (5/7 GiB memory, CPU300%, swap0, tasks1024). Owned instances
+are removed before releasing the scope; production services and the terminated
+user manager are untouched. The earlier v0.1 evidence below remains historical.
 
 ## Thread integration candidate — 2026-10-14
 

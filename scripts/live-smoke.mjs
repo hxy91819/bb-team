@@ -9,7 +9,7 @@ import {
   symlink,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { spawn, execFileSync } from "node:child_process";
 import { once } from "node:events";
 import { createServer } from "node:net";
@@ -29,8 +29,13 @@ await writeFile(join(data, "bb-team-owner"), String(process.pid));
 const upgradeFrom = process.env.BB_TEAM_UPGRADE_FROM;
 if (upgradeFrom && !/^[a-f0-9]{40}$/.test(upgradeFrom))
   throw Error("BB_TEAM_UPGRADE_FROM must be an exact local commit SHA");
-const livePlugin = join(data, "plugin");
-await mkdir(livePlugin);
+const installDirectory = process.env.BB_TEAM_INSTALL_DIR;
+if (installDirectory && upgradeFrom)
+  throw Error("Archive installation and legacy upgrade are separate journeys");
+const livePlugin = installDirectory
+  ? resolve(installDirectory)
+  : join(data, "plugin");
+if (!installDirectory) await mkdir(livePlugin);
 async function copyCurrentPlugin() {
   for (const entry of [
     "package.json",
@@ -65,12 +70,13 @@ if (upgradeFrom) {
     { cwd: root },
   );
   execFileSync("tar", ["-xf", archive, "-C", livePlugin]);
-} else await copyCurrentPlugin();
-await symlink(
-  join(root, "node_modules"),
-  join(livePlugin, "node_modules"),
-  "dir",
-);
+} else if (!installDirectory) await copyCurrentPlugin();
+if (!installDirectory)
+  await symlink(
+    join(root, "node_modules"),
+    join(livePlugin, "node_modules"),
+    "dir",
+  );
 const portServer = createServer();
 portServer.listen(0, "127.0.0.1");
 await once(portServer, "listening");
@@ -173,6 +179,7 @@ async function openPicker(page) {
 let browser;
 let diagnosticPage;
 let daemon;
+const clippedAvatars = [];
 
 try {
   for (let attempt = 0; ; attempt++) {
@@ -289,7 +296,8 @@ try {
     ).toEqual({ memberId: id });
     const before = await rpc("state");
     browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
+    const upgradeContext = await browser.newContext();
+    const page = await upgradeContext.newPage();
     diagnosticPage = page;
     await page.goto(`${url}/plugins/team/members`);
     const skip = page.getByRole("button", { name: "Skip setup", exact: true });
@@ -303,7 +311,12 @@ try {
       await page.goto(`${url}/plugins/team/members`);
     }
     await remember.click();
+    await expect(
+      page.getByRole("button", { name: "Edit my profile", exact: true }),
+    ).toBeVisible();
     await page.goto(url);
+    const upgradeSecond = await page.context().newPage();
+    await upgradeSecond.goto(url);
     await copyCurrentPlugin();
     await runCli(["plugin", "build", livePlugin]);
     await runCli(["plugin", "reload", "team"]);
@@ -340,6 +353,16 @@ try {
     await expect(
       page.getByRole("dialog", { name: "选择团队身份", exact: true }),
     ).not.toBeVisible();
+    await expect(
+      upgradeSecond.getByRole("button", {
+        name: "当前身份：Admin，切换身份",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await openPicker(upgradeSecond);
+    await upgradeSecond
+      .getByRole("button", { name: "关闭", exact: true })
+      .click();
     await openPicker(page);
     await expect(
       page.getByRole("button", { name: "编辑资料", exact: true }),
@@ -416,9 +439,11 @@ try {
     await expect(page.locator("fieldset button")).toHaveCount(20);
     await expect
       .poll(() =>
-        page.locator("fieldset img").evaluateAll((images) =>
-          images.every((image) => image.complete && image.naturalWidth > 0),
-        ),
+        page
+          .locator("fieldset img")
+          .evaluateAll((images) =>
+            images.every((image) => image.complete && image.naturalWidth > 0),
+          ),
       )
       .toBe(true);
     if (evidence)
@@ -442,6 +467,15 @@ try {
     await second
       .getByRole("button", { name: "选择 Member", exact: true })
       .click();
+    await expect(
+      second.getByRole("dialog", { name: "选择团队身份", exact: true }),
+    ).not.toBeVisible();
+    await expect(
+      second.getByRole("button", {
+        name: "当前身份：Member，切换身份",
+        exact: true,
+      }),
+    ).toBeVisible();
     await second.reload();
     await expect(
       second.getByRole("button", {
@@ -520,6 +554,13 @@ try {
           '[data-app-composer-role="primary"] button[data-promptbox-submit-action][type="submit"]',
         );
       await page.goto(`${url}/projects/${project.id}`);
+      diagnosticPage = page;
+      await expect(
+        page.getByRole("button", {
+          name: "当前身份：Admin，切换身份",
+          exact: true,
+        }),
+      ).toBeVisible();
       await editor(page).fill("Admin native fixture");
       await expect(submit(page)).toBeEnabled();
       await submit(page).click();
@@ -553,6 +594,15 @@ try {
       await page
         .getByRole("button", { name: "仅此窗口选择 Renamed", exact: true })
         .click();
+      await expect(
+        page.getByRole("dialog", { name: "选择团队身份", exact: true }),
+      ).not.toBeVisible();
+      await expect(
+        page.getByRole("button", {
+          name: "当前身份：Renamed，切换身份",
+          exact: true,
+        }),
+      ).toBeVisible();
       await page.goto(`${url}/projects/${project.id}/threads/${firstId}`);
       await page
         .getByText("Response to: Admin native fixture", { exact: true })
@@ -673,6 +723,10 @@ try {
         .getByRole("button", { name: "此窗口暂不选择身份", exact: true })
         .click();
       await page.goto(`${url}/projects/${project.id}`);
+      await expect(
+        page.getByRole("dialog", { name: "选择团队身份", exact: true }),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "关闭", exact: true }).click();
       await editor(page).fill("Unassigned native fixture");
       await submit(page).click();
       await page.waitForURL(/\/threads\//);
@@ -719,6 +773,9 @@ try {
       await page
         .getByRole("button", { name: "选择 Admin", exact: true })
         .click();
+      await expect(
+        page.getByRole("dialog", { name: "选择团队身份", exact: true }),
+      ).not.toBeVisible();
       const report = await rpc("activity", {
         memberId: admin.memberId,
         date: "today",
@@ -735,7 +792,142 @@ try {
       console.log(
         "PASS: native attribution and bounded activity on normal deterministic provider protocol (not paid AI)",
       );
-      // List layout assertions are added against the delivered candidate SDK/host contract.
+      const childPath = join(data, "child-project");
+      await mkdir(childPath);
+      const childProject = await sdk.projects.create({
+        name: "Child project",
+        source: { type: "local_path", hostId: host.id, path: childPath },
+      });
+      const childThread = await sdk.threads.spawn({
+        projectId: childProject.id,
+        parentThreadId: firstId,
+        origin: "app",
+        providerId: "team-echo",
+        model: "fake-model",
+        reasoningLevel: "medium",
+        permissionMode: "full",
+        environment: {
+          type: "host",
+          hostId: host.id,
+          workspace: { type: "unmanaged", path: childPath },
+        },
+        experimental_pluginContext: { team: { memberId: other.memberId } },
+        prompt: "Cross-group child evidence",
+      });
+      await sdk.threads.pin({ threadId: secondId });
+      await page.goto(`${url}/projects/${project.id}/threads/${firstId}`);
+      await runCli([
+        "thread-list",
+        "prefs",
+        "set",
+        "organizationMode",
+        "team/members",
+      ]);
+      await expect(
+        page.getByRole("button", {
+          name: "Collapse Admin section",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.locator(
+          '[data-sidebar-rename-row] [aria-label^="Thread member:"]',
+        ),
+      ).toHaveCount(0);
+      await expect(
+        page.locator("[data-sidebar-thread-cross-project]").first(),
+      ).toBeVisible();
+      const expandChild = page.getByRole("button", {
+        name: "Expand Admin native fixture threads",
+        exact: true,
+      });
+      if (await expandChild.isVisible()) await expandChild.click();
+      const childRow = page
+        .locator('[data-sidebar-rename-row][role="button"]')
+        .filter({
+          has: page.locator(`[data-sidebar-thread-id="${childThread.id}"]`),
+        });
+      await expect(childRow).toBeVisible();
+      await expect(
+        childRow.getByLabel("In project Child project", { exact: true }),
+      ).toBeVisible();
+      await expect(
+        childRow.locator('[aria-label^="Thread member:"]'),
+      ).toHaveCount(0);
+      const pinnedRow = page
+        .locator('[data-sidebar-rename-row][role="button"]')
+        .filter({ has: page.locator(`[data-sidebar-thread-id="${secondId}"]`) })
+        .first();
+      await expect(
+        pinnedRow.getByLabel("In project Team identity acceptance", {
+          exact: true,
+        }),
+      ).toBeVisible();
+      if (evidence)
+        await page.screenshot({ path: join(evidence, "member-groups.png") });
+      for (const mode of ["chronological", "project", "machine"]) {
+        await runCli(["thread-list", "prefs", "set", "organizationMode", mode]);
+        const avatar = page
+          .getByLabel("Thread member: Admin", { exact: true })
+          .first();
+        await expect(avatar).toBeVisible();
+        expect(await avatar.textContent()).toBe("");
+        await expect(avatar).toHaveAttribute("title", "Thread member: Admin");
+        expect(
+          await avatar.evaluate((element) => {
+            const row = element.closest("[data-sidebar-rename-row]");
+            const title = row?.querySelector(".bb-thread-title");
+            const provider = row?.querySelector(
+              "[data-sidebar-thread-provider]",
+            );
+            return Boolean(
+              title &&
+              element.compareDocumentPosition(title) &
+                Node.DOCUMENT_POSITION_FOLLOWING &&
+              (!provider ||
+                element.compareDocumentPosition(provider) &
+                  Node.DOCUMENT_POSITION_FOLLOWING),
+            );
+          }),
+        ).toBe(true);
+        await expect(
+          page.getByLabel("Thread member: Unassigned", { exact: true }),
+        ).toHaveCount(0);
+        const dimensions = await page
+          .locator('[data-sidebar-thread-decorations="leading"] [role="img"]')
+          .evaluateAll((elements) =>
+            elements.map((element) => ({
+              name: element.getAttribute("aria-label"),
+              container: element.parentElement.getBoundingClientRect().width,
+              anchor: element.getBoundingClientRect().width,
+              image:
+                element.querySelector("img")?.getBoundingClientRect().width ??
+                0,
+            })),
+          );
+        clippedAvatars.push(
+          ...dimensions
+            .filter(
+              (item) =>
+                item.image < 15.5 ||
+                item.container + 0.5 < item.image ||
+                item.anchor + 0.5 < item.image,
+            )
+            .map((item) => ({ mode, ...item })),
+        );
+        if (evidence) {
+          await writeFile(
+            join(evidence, `avatar-dimensions-${mode}.json`),
+            JSON.stringify(dimensions, null, 2),
+          );
+          await page.screenshot({
+            path: join(evidence, `leading-avatar-${mode}.png`),
+          });
+        }
+      }
+      console.log(
+        "PASS: member groups omit row member decorations and show native projects; chronological/project/machine render only leading member avatars before provider/title",
+      );
     }
     await runCli(["plugin", "disable", "team"]);
     await expect(page.getByRole("button", { name: /^当前身份：/ })).toHaveCount(
@@ -840,6 +1032,18 @@ try {
         await page.screenshot({
           path: join(evidence, `closed-sidebar-identity-${engine.name()}.png`),
         });
+      const identityBounds = await page
+        .getByRole("button", {
+          name: "当前身份：Renamed，切换身份",
+          exact: true,
+        })
+        .boundingBox();
+      const composerBounds = await page
+        .locator('[data-app-composer-role="primary"]')
+        .boundingBox();
+      expect(identityBounds.y + identityBounds.height).toBeLessThan(
+        composerBounds.y,
+      );
       await openPicker(page);
       await page.getByRole("button", { name: "关闭", exact: true }).click();
       console.log(
@@ -848,6 +1052,12 @@ try {
       await browser.close();
       browser = null;
     }
+    if (evidence)
+      await writeFile(
+        join(evidence, "clipped-avatars.json"),
+        JSON.stringify(clippedAvatars, null, 2),
+      );
+    expect(clippedAvatars).toEqual([]);
     console.log(`PASS: identity/Admin integration on BB ${provenance.source}`);
   }
 } catch (error) {
