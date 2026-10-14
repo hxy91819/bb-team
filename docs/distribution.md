@@ -2,14 +2,14 @@
 
 ## Supply status
 
-The compatible [BB release](https://github.com/hxy91819/bb/releases/tag/fork-v0.46.0-20261014.2)
-is `fork-v0.46.0-20261014.2`, source
-`955e181051f0571e0fcecbc9a82de36eb5fb697a`.
+The compatible [BB release](https://github.com/hxy91819/bb/releases/tag/fork-v0.46.0-20261014.3)
+is `fork-v0.46.0-20261014.3`, source
+`9ddb184943a3ce7e5820fb1d141c782c958af521`.
 [release/bb-supply.json](../release/bb-supply.json) records verified runtime and
 SDK SHA256 checksums and the SDK integrity used by the lockfile.
 
 The SDK URL is
-`https://github.com/hxy91819/bb/releases/download/fork-v0.46.0-20261014.2/bb-plugin-sdk-fork-v0.46.0-20261014.2.tgz`.
+`https://github.com/hxy91819/bb/releases/download/fork-v0.46.0-20261014.3/bb-plugin-sdk-fork-v0.46.0-20261014.3.tgz`.
 It remains `@get-bb/plugin-sdk` version `0.6.37`, but comes from that BB source;
 the npm registry's same version does not provide the fork APIs. package.json
 and package-lock.json pin this URL and its measured integrity. No local

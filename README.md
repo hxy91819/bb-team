@@ -2,8 +2,8 @@
 
 Independent BB plugin for trusted, self-selected team members, native thread
 attribution, member grouping/row labels and on-demand retained activity.
-Requires [BB fork `fork-v0.46.0-20261014.2`](https://github.com/hxy91819/bb/releases/tag/fork-v0.46.0-20261014.2),
-source `955e181051f0571e0fcecbc9a82de36eb5fb697a`, and its matching SDK.
+Requires [BB fork `fork-v0.46.0-20261014.3`](https://github.com/hxy91819/bb/releases/tag/fork-v0.46.0-20261014.3),
+source `9ddb184943a3ce7e5820fb1d141c782c958af521`, and its matching SDK.
 Stock BB 0.46.0 / SDK 0.6.37 do not supply these extensions. The SDK dependency
 is pinned to the verified BB Release asset URL and integrity.
 

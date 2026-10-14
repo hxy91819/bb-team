@@ -1,8 +1,28 @@
 # Verification record
 
-## v0.2 official supply acceptance
+## v0.2 final compatible supply
 
-The v0.2 implementation uses BB `fork-v0.46.0-20261014.2`, source
+The final supply is BB `fork-v0.46.0-20261014.3`, source
+`9ddb184943a3ce7e5820fb1d141c782c958af521`. SDK and runtime hashes were
+independently verified before pinning their immutable release URLs.
+
+Focused integration on the same-source candidate passed chronological, project
+and machine modes at 320/240px with real root, long-title pinned and cross-project
+child rows: all 18 avatars, anchors and containers were 16px; no row overflow.
+The earlier chronological 240px overflow is resolved (scrollWidth/clientWidth
+both 172px). Member groups omit duplicate row identities and retain projects.
+Chromium/WebKit at 390x844 passed picker/profile/Search/touch navigation and
+identity/composer separation. Cold second-window/refresh identity and production
+installation/build passed. This uses a deterministic public-protocol provider.
+
+The .2 full functional/upgrade results below remain attributed to their actual
+source. Candidate evidence and original failures are retained separately in
+`/tmp/bb-team-budget-9ddb-pbj6j2khqk/INDEX.md`; formal distribution checks are
+recorded in `/tmp/bb-team-v02-final-pbj6j2khqk/INDEX.md`.
+
+## v0.2 initial .2 supply acceptance (historical)
+
+The initial v0.2 acceptance used BB `fork-v0.46.0-20261014.2`, source
 `955e181051f0571e0fcecbc9a82de36eb5fb697a`, Node 24.15.0 and its URL-pinned
 SDK. Downloaded runtime/SDK SHA256 and SDK SHA512 integrity were independently
 verified; receipts are in `release/bb-supply.json`.
@@ -29,7 +49,7 @@ passed compact identity/composer separation in both browsers and real
 cross-project child/pinned badges. They also exposed a host layout defect:
 16px leading avatars shrink to 1.86–11.20px in chronological rows. Actual
 browser dimensions and an assertion red are retained; the minimum-width
-assertion now catches this and publication waits for the host repair. Failed script waits/fixture setup and
+assertion now catches this and publication was held for the host repair. Failed script waits/fixture setup and
 locator attempts are retained and not counted as passing runs. Incremental
 review is tracked separately from actual browser results.
 
