@@ -2,11 +2,10 @@
 
 Independent BB plugin for trusted, self-selected team members, native thread
 attribution, member grouping/row labels and on-demand retained activity.
-This is a **local candidate**, requiring BB fork source
-`e7c2ef8409d575c463cba97f366a936e724bfd98` and its matching SDK artifact.
-Stock BB 0.46.0 / SDK 0.6.37 do not supply these extensions. Formal SDK asset
-URLs and release installation remain pending joint acceptance; this candidate
-has not been published.
+Requires [BB fork `fork-v0.46.0-20261014.1`](https://github.com/hxy91819/bb/releases/tag/fork-v0.46.0-20261014.1),
+source `e7c2ef8409d575c463cba97f366a936e724bfd98`, and its matching SDK.
+Stock BB 0.46.0 / SDK 0.6.37 do not supply these extensions. The SDK dependency
+is pinned to the verified BB Release asset URL and integrity.
 
 ## Implemented behavior
 
@@ -73,33 +72,25 @@ has not been published.
 ## Distribution
 
 See [installation and release artifacts](docs/distribution.md) for the complete
-archive and fixed-tag Git installation contracts. Formal BB supply is being
-prepared for `fork-v0.46.0-20261014.1` at the same source SHA; the committed
-[supply record](release/bb-supply.json) explicitly records its verification
-status. Expected URLs are not yet verified downloads.
+archive and fixed-tag Git installation instructions. The committed
+[supply record](release/bb-supply.json) pins the verified compatible BB tag,
+source, runtime/SDK checksums and SDK integrity.
 
 ## Development and installation
 
-Requires matching Node 24, candidate runtime and candidate SDK. The lockfile's
-stock SDK entry is provisional, not a compatibility claim: after `npm ci`,
-overlay the verified candidate tgz with `--no-save --package-lock=false`.
-Never commit a local `file:` dependency. The formal release step must replace
-this provisional SDK entry with the published artifact URL and integrity.
+Requires the matching BB runtime with Node 24. `npm ci` installs the fork SDK
+from its immutable Release URL; no candidate overlay is needed.
 
 ```bash
 git clone https://github.com/hxy91819/bb-team.git
 cd bb-team
-export BB_TEAM_RUNTIME_DIR=/absolute/path/to/extracted/candidate-runtime
+export BB_TEAM_RUNTIME_DIR='/absolute/path/to/extracted/bb-runtime'
 export PATH="$BB_TEAM_RUNTIME_DIR/bin:$PATH"
 npm ci
-# Verify the supplied SDK checksum, then overlay using task-owned empty npm
-# userconfig/globalconfig and an environment without npm_config_allow_scripts
-# (including uppercase variants). Do not modify actual user/global npm config.
-npm install --no-save --package-lock=false --ignore-scripts "$CANDIDATE_SDK_TGZ"
 npm run check
 ```
 
-`build` invokes the selected candidate runtime's public `bb plugin build`,
+`build` invokes the selected matching runtime's public `bb plugin build`,
 checks source provenance and isolates child npm configuration. It never falls
 back to stock or the main service's `BB_CLI`. Asset loading needs no
 npm lifecycle hook: BB managed Git installation disables scripts and omits dev
@@ -118,7 +109,7 @@ BB_CLI="$BB_TEAM_RUNTIME_DIR/bin/bb" BB_SERVER_URL=http://127.0.0.1:YOUR_DEV_POR
 ```
 
 Do not interpret these examples as automatic installation into your normal BB
-instance. `scripts/live-smoke.mjs` starts the selected candidate server with a fresh
+instance. `scripts/live-smoke.mjs` starts the selected matching server with a fresh
 temporary data directory, installs this package, exercises real browser and
 wire flows, then stops the server and deletes only its own temporary data.
 It installs a temporary copy so changed-bundle reload verification cannot
@@ -206,8 +197,8 @@ plugin never removes team data as a shutdown side effect.
 describes the trusted boundary. Vendored UI retains BB's actual MIT license in
 [licenses/](licenses/README.md); plugin code is copyright hxy91819.
 
-CI needs the verified runtime and matching SDK supply configured before this
-candidate can be released. Once supplied, it performs dependency installation, behavior tests, lint, formatting,
+CI downloads and verifies the pinned runtime and SDK, then performs dependency
+installation, behavior tests, lint, formatting,
 typecheck, plugin build, production dependency audit and secret scanning. The full development audit
 also runs and currently reports known advisories bundled inside npm, which
 upstream npm cannot auto-fix; this advisory step is visible and non-blocking. Verification

@@ -2,30 +2,27 @@
 
 ## Supply status
 
-The intended compatible BB release is `fork-v0.46.0-20261014.1`, source
-`e7c2ef8409d575c463cba97f366a936e724bfd98`. This checkout is preparing that
-release integration. `release/bb-supply.json` currently says `pending`:
-formal assets and their hashes have **not** yet been verified here.
+The compatible [BB release](https://github.com/hxy91819/bb/releases/tag/fork-v0.46.0-20261014.1)
+is `fork-v0.46.0-20261014.1`, source
+`e7c2ef8409d575c463cba97f366a936e724bfd98`.
+[release/bb-supply.json](../release/bb-supply.json) records verified runtime and
+SDK SHA256 checksums and the SDK integrity used by the lockfile.
 
-The expected SDK URL is
+The SDK URL is
 `https://github.com/hxy91819/bb/releases/download/fork-v0.46.0-20261014.1/bb-plugin-sdk-fork-v0.46.0-20261014.1.tgz`.
 It remains `@get-bb/plugin-sdk` version `0.6.37`, but comes from that BB source;
-the npm registry's same version does not provide the fork APIs. The formal
-release step must pin this URL and its measured integrity in package.json and
-package-lock.json. No local `file:` dependency is published.
-
-The commands below describe the installation contract for **published**
-artifacts. Replace the example variables with assets/tags from the actual
-release; the presence of these examples is not proof of publication.
+the npm registry's same version does not provide the fork APIs. package.json
+and package-lock.json pin this URL and its measured integrity. No local
+`file:` dependency is published.
 
 ## Complete archive installation
 
-The plugin release provides `bb-team-vVERSION.tar.gz`, its `.tar.gz.sha256`,
+The plugin release provides `bb-team-v0.1.0.tar.gz`, its `.tar.gz.sha256`,
 and a JSON source/checksum receipt. Download all three from the same plugin
-release. For example, after choosing an actual published version:
+release:
 
 ```bash
-PLUGIN_TAG='vX.Y.Z' # replace with an actual published plugin tag
+PLUGIN_TAG='v0.1.0'
 ARCHIVE="bb-team-${PLUGIN_TAG}.tar.gz"
 BASE_URL="https://github.com/hxy91819/bb-team/releases/download/${PLUGIN_TAG}"
 curl --fail --location "$BASE_URL/$ARCHIVE" --output "$ARCHIVE"
@@ -72,16 +69,15 @@ directory after installing: local path installations continue to use it.
 Use the same compatible BB runtime and an actual published plugin tag:
 
 ```bash
-PLUGIN_TAG='vX.Y.Z' # replace with an actual published plugin tag
+PLUGIN_TAG='v0.1.0'
 "$BB_RUNTIME/bin/bb" plugin install "git:https://github.com/hxy91819/bb-team.git@${PLUGIN_TAG}"
 ```
 
 A commit SHA can replace the tag. A bare repository URL tracks its default
 branch; a fixed tag/commit records the version you chose. Managed Git
 installation installs production dependencies with lifecycle scripts disabled
-and rebuilds the plugin. The formal SDK pin must be available even when an
-installation omits development dependencies, so clean installation is verified
-again after publication of the BB supply.
+and rebuilds the plugin. The formal SDK pin is available even when an
+installation omits development dependencies.
 
 ## Creating artifacts
 
