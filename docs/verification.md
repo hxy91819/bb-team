@@ -32,13 +32,13 @@ This file records executed checks, not a promise of complete team integration.
 Executed locally on 2026-10-14, Node 24.15.0, public Plugin SDK 0.6.37 and
 public bb-app 0.46.0:
 
-- `npm run check`: 10 behavior tests across real SQLite/service, real plugin
+- `npm run check`: 12 behavior tests across real SQLite/service, real plugin
   entry/RPC/CLI/script SDK and frontend harness; lint, formatting, typecheck,
   public plugin backend/frontend build all passed.
 - `npm run audit`: production dependency graph reports zero vulnerabilities.
 - A fresh source copy installed with `--ignore-scripts --omit=dev
-  --omit=optional` and built with the pinned public CLI. A committed Git clone
-  will be checked separately after the reviewed baseline commit.
+  --omit=optional` and built with the pinned public CLI. The reviewed commit was then cloned and built under the same production-only
+  flags, without generated files.
 - `node scripts/live-smoke.mjs`: fresh-data public server actually loaded the
   plugin; HTTP/RPC/CLI/public SDK, initialization timezone, two Chromium windows,
   per-window refresh, profile signals, ordinary timezone writes and DB retention
@@ -52,11 +52,23 @@ public bb-app 0.46.0:
   restarted or deployed.
 - Backend bundle is about 216 KB; app bundle about 31 KB. The PNG inventory
   remains separate package files and is absent from frontend JavaScript.
-- Independent review is in progress in BB thread `thr_8j3wywuh7z`, against all
-  staged source/test/CI changes since the asset-only base commit.
+- Initial independent review `thr_8j3wywuh7z` identified three P1 defects:
+  refreshed forms lost drafts, readable storage overrode failed in-memory
+  writes, and URL.pathname broke encoded checkout paths. New regressions
+  failed before the relevant fixes. Review `thr_w8h8kbq2bm` and its follow-up
+  found no remaining P0/P1 defects, including the SDK scan root conversion.
+- Final `npm run check` and production audit passed on reviewed code commit
+  `736e9a357c1864e254586a00e24a7662c14351c9`. The full live browser journey
+  passed again after the fixes.
+- The original build entry failed in a directory containing spaces and CJK;
+  the repaired entry succeeded in the same directory. A separate clean Git
+  clone in such a directory passed managed production installation/build,
+  all five member tests (using this repository's pinned development graph),
+  and its own build entry. No BB worktree dependencies were used.
 
-Git clone verification, public commit and first CI status will be added before
-final delivery.
+GitHub CI runs against the pushed main commit. Its linked run and final remote
+SHA are reported with the delivery, rather than inventing a self-referential
+commit hash in this file.
 
 Local full dependency audit currently reports five vulnerabilities inside the
 npm 12.2.0 development CLI dependency: brace-expansion, http-cache-semantics,

@@ -128,8 +128,12 @@ for that transport and `createTeamSdkClient` for public `sdk.plugins.callRpc`.
 Script callers can pass a public BB SDK with `plugins.callRpc` and its output
 schema support. All write methods use the same member service.
 
+For source-checkout scripts, use TypeScript with `npx tsx YOUR_SCRIPT.ts`
+(the runtime Plugin SDK and script tooling are installed by `npm ci`).
+Within another plugin, use its provided `bb.sdk`:
+
 ```ts
-import { createTeamSdkClient } from './src/client.js';
+import { createTeamSdkClient } from './src/client.ts';
 const team = createTeamSdkClient(bb.sdk);
 const page = await team.list('Name', 20);
 const profile = await team.get(memberId);
