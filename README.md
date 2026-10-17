@@ -1,3 +1,7 @@
+> Maintenance moved to [hxy91819/bb-plugins](https://github.com/hxy91819/bb-plugins/tree/main/plugins/team). This repository preserves historical source and releases.
+>
+> New installations: `bb plugin install git:https://github.com/hxy91819/bb-plugins.git@main --plugin team`. Existing installations: follow the [data-preserving migration instructions](https://github.com/hxy91819/bb-plugins/blob/main/docs/migration.md). Plugin ID `team` is unchanged.
+
 # bb-team
 
 Independent BB plugin for trusted, self-selected team members, native thread
